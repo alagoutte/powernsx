@@ -3,7 +3,7 @@
 #    BuildConfiguration: Release
 
 install:
-    - ps: Install-Module -Name PSScriptAnalyzer
+    - ps: Install-Module -Name PSScriptAnalyzer -Repository PSGallery
 
 test_script:
     - ps: Invoke-ScriptAnalyzer -Path .\
