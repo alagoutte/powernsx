@@ -4,7 +4,7 @@ environment:
     PowerShellEdition: Desktop
 
 install:
-    - ps: Install-Module -Name PSScriptAnalyzer -Repository PSGallery
+    - ps: Install-Module -Name PSScriptAnalyzer
 
 test_script:
     - ps: Invoke-ScriptAnalyzer -Path .\
