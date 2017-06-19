@@ -1,0 +1,13 @@
+environment:
+  - APPVEYOR_BUILD_WORKER_IMAGE: WMF 5
+    PowerShellEdition: Desktop
+    BuildConfiguration: Release
+
+install:
+    - ps: Install-Module -Name PSScriptAnalyzer
+
+test_script:
+    - ps: Invoke-ScriptAnalyzer -Path .\
+    - ps: Invoke-ScriptAnalyzer -Path .\tests\
+    - ps: Invoke-ScriptAnalyzer -Path .\tests\integration
+
