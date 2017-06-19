@@ -1,6 +1,6 @@
-  - APPVEYOR_BUILD_WORKER_IMAGE: WMF 5
-    PowerShellEdition: Desktop
-    BuildConfiguration: Release
+#  - APPVEYOR_BUILD_WORKER_IMAGE: WMF 5
+#    PowerShellEdition: Desktop
+#    BuildConfiguration: Release
 
 install:
     - ps: Install-Module -Name PSScriptAnalyzer
