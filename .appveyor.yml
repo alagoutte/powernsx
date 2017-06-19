@@ -1,4 +1,3 @@
-environment:
   - APPVEYOR_BUILD_WORKER_IMAGE: WMF 5
     PowerShellEdition: Desktop
     BuildConfiguration: Release
