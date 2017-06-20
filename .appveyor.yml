@@ -4,6 +4,7 @@ environment:
     PowerShellEdition: Desktop
 
 install:
+    - ps: Get-PackageProvider -Name NuGet -Force
     - ps: Install-Module -Name PSScriptAnalyzer
 
 test_script:
