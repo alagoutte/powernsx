@@ -5,7 +5,7 @@ environment:
 
 install:
     - ps: Get-PackageProvider -Name NuGet -Force
-    - ps: Install-Module -Name PSScriptAnalyzer
+    - ps: Install-Module -Name PSScriptAnalyzer -Force
 
 test_script:
     - ps: Invoke-ScriptAnalyzer -Path .\
