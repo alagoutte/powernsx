@@ -84,4 +84,8 @@ New-ModuleManifest -Path "$GalleryPath/PowerNSX/PowerNSX.psd1" -RequiredModules 
 
 Publish-Module -NuGetApiKey $NugetAPIKey -Path "$GalleryPath/PowerNSX"
 
+Get-Content "$DesktopPath/PowerNSX/PowerNSX.psd1" -Encoding Unicode |  Set-Content -Encoding UTF8 "$DesktopPath/PowerNSX/PowerNSX.psd1"
+Get-Content "$CorePath/PowerNSX/PowerNSX.psd1" -Encoding Unicode |  Set-Content -Encoding UTF8 "$CorePath/PowerNSX/PowerNSX.psd1"
+Get-Content "$GalleryPath/PowerNSX/PowerNSX.psd1" -Encoding Unicode |  Set-Content -Encoding UTF8 "$GalleryPath/PowerNSX/PowerNSX.psd1"
+
 write-host -ForegroundColor Yellow "Version $ModuleVersion is now published to the Powershell Gallery.  You MUST now push these updates back to the git repository."
