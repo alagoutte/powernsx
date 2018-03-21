@@ -35307,6 +35307,149 @@ function Get-NsxTunnel {
     }
 }
 
+
+function Add-NsxTunnel {
+
+    <#
+    .SYNOPSIS
+    Add the Tunnel configuration from a specified Edge.
+
+    .DESCRIPTION
+    An NSX Edge Service Gateway provides all NSX Edge services such as firewall,
+    NAT, DHCP, VPN, load balancing, and high availability.
+
+    The NSX Edge can create GRE tunnels between your NSX environment and another
+    site. Routing using BGP and static routes is supported.
+
+    This Add-NsxTunnel cmdlet configure the Tunnel configuration from a specified Edge.
+
+    .EXAMPLE
+
+    PS C:\> Get-NsxEdge Edge01 | Add-NsxTunnel -sourceAddress 192.0.2.1 -destination 198.51.100.1 -tunnelAddress 192.168.44.44/24
+
+    Add a NSX (GRE) tunnel between NSX Edge with local 192.0.2.1 and remote endpoint 198.51.100.1 with tunnelAddress 192.168.44.44
+
+    .EXAMPLE
+
+    PS C:\> Get-NsxEdge Edge01 | Add-NsxTunnel -sourceAddress 192.0.2.1 -destination 198.51.100.1 -tunnelAddress 192.168.44.44/24 -mtu 1500 -enableKeepAliveAck:$true
+
+    Add a NSX (GRE) tunnel with mtu 1500 and enable KeepAliveAck
+
+    .EXAMPLE
+    PS C:\> Get-NsxEdge Edge01 | Add-NsxTunnel -sourceAddress 192.0.2.1 -destination 198.51.100.1 -tunnelAddress 192.168.44.44/24 -hc_enable:$true -hc_interval 5 -hc_deadTimeMultiplier 5
+
+    Add a NSX (GRE) tunnel with enable tunnel HealthCheck and change interval and deadtime (Multiplier)
+    #>
+
+    param (
+        [Parameter (Mandatory=$true,ValueFromPipeline=$true,Position=1)]
+            [ValidateScript({ ValidateEdge $_ })]
+            [System.Xml.XmlElement]$Edge,
+        [Parameter (Mandatory=$false)]
+            [string]$Name,
+        [Parameter (Mandatory=$false)]
+            [string]$description,
+        [Parameter (Mandatory=$false)]
+            [ValidateSet("gre")]
+            [string]$Type="gre",
+        [Parameter (Mandatory=$false)]
+            [switch]$enabled=$true,
+        [Parameter (Mandatory=$true)]
+            [ValidateNotNullOrEmpty()]
+            [string]$sourceAddress,
+        [Parameter (Mandatory=$true)]
+            [ValidateNotNullOrEmpty()]
+            [string]$destinationAddress,
+        [Parameter (Mandatory=$false)]
+            [ValidateRange(92,8976)]
+            [int]$mtu=1476,
+        [Parameter (Mandatory=$true)]
+            [ValidateNotNullOrEmpty()]
+            [string[]]$tunnelAddress,
+        [Parameter (Mandatory=$false)]
+            [switch]$enableKeepAliveAck=$false,
+        [Parameter (Mandatory=$false)]
+            [switch]$hc_enable=$false,
+        [Parameter (Mandatory=$false)]
+            [ValidateSet("ping"]
+            [string]$hc_type=ping,
+        [Parameter (Mandatory=$false)]
+            [ValidateRange(1, 10]
+            [int]$hc_interval=3,
+        [Parameter (Mandatory=$false)]
+            [ValidateRange(0, 10]
+            [int]$hc_deadTimeMultiplier=4,
+        [Parameter (Mandatory=$False)]
+            #PowerNSX Connection object
+            [ValidateNotNullOrEmpty()]
+            [PSCustomObject]$Connection=$defaultNSXConnection
+    )
+
+    begin {}
+
+    process {
+
+        $edgeId = $Edge.Id
+
+        [System.XML.XMLDocument]$xmlDoc = New-Object System.XML.XMLDocument
+        [System.XML.XMLElement]$xmltunnel = $XMLDoc.CreateElement("tunnel")
+        $xmlDoc.appendChild($xmltunnel) | out-null
+
+        if ( $PsBoundParameters.ContainsKey("Name")) {
+            Add-XmlElement -xmlRoot $xmltunnel -xmlElementName "name" -xmlElementText $name
+        }
+
+        if ( $PsBoundParameters.ContainsKey("description")) {
+            Add-XmlElement -xmlRoot $xmltunnel -xmlElementName "description" -xmlElementText $description
+        }
+
+        Add-XmlElement -xmlRoot $xmltunnel -xmlElementName "type" -xmlElementText $type
+
+        Add-XmlElement -xmlroot  $xmltunnel -xmlElementName "enabled" -xmlElementText $Enabled.ToString().ToLower()
+
+        Add-XmlElement -xmlRoot $xmltunnel -xmlElementName "sourceAddress" -xmlElementText $sourceAddress
+
+        Add-XmlElement -xmlRoot $xmltunnel -xmlElementName "destinationAddress" -xmlElementText $destinationAddress
+
+        [System.XML.XMLElement]$xmltunnelinterface = $xmltunnel.OwnerDocument.CreateElement('tunnelInterface')
+        $xmltunnel.Appendchild($xmltunnelinterface) | out-null
+
+        Add-XmlElement -xmlRoot $xmltunnelinterface -xmlElementName "mtu" -xmlElementText $mtu
+
+        [System.XML.XMLElement]$xmltunneladdresses = $xmltunnelinterface.OwnerDocument.CreateElement('tunnelAddresses')
+        $xmltunnelinterface.Appendchild($xmltunneladdresses) | out-null
+
+        foreach ($address in $tunnelAddress) {
+            Add-XmlElement -xmlRoot $xmltunneladdresses -xmlElementName "tunnelAddress" -xmlElementText $address.ToString()
+        }
+
+        [System.XML.XMLElement]$xmlgreConfig = $xmltunnel.OwnerDocument.CreateElement('greConfig')
+        $xmltunnel.Appendchild($xmlgreConfig) | out-null
+
+        Add-XmlElement -xmlRoot $xmlgreConfig -xmlElementName "enableKeepAliveAck" -xmlElementText $enableKeepAliveAck
+
+        [System.XML.XMLElement]$xmltunnelHealthCheck = $xmltunnel.OwnerDocument.CreateElement('tunnelHealthCheck')
+        $xmltunnel.Appendchild($xmltunnelHealthCheck) | out-null
+
+        Add-XmlElement -xmlRoot $xmltunnelHealthCheck -xmlElementName "enabled" -xmlElementText $hc_enabled.ToString().Lower()
+
+        Add-XmlElement -xmlRoot $xmltunnelHealthCheck -xmlElementName "type" -xmlElementText $hc_type
+
+        Add-XmlElement -xmlRoot $xmltunnelHealthCheck -xmlElementName "interval" -xmlElementText $hc_interval
+
+        Add-XmlElement -xmlRoot $xmltunnelHealthCheck -xmlElementName "deadTimeMultiplier" -xmlElementText $hc_deadTimeMultiplier
+
+        $URI = "/api/4.0/edges/$($edgeId)/tunnels"
+        $body = $xmlDoc.OuterXml
+
+        Write-Progress -activity "Update Edge Services Gateway $($edgeId)"
+        $response = invoke-nsxwebrequest -method "post" -uri $URI -body $body -connection $connection
+        Write-Progress -activity "Update Edge Services Gateway $($edgeId)" -completed
+        #Get-NsxEdge -objectId $($edgeId)  -connection $connection | Get-NsxTunnel
+    }
+}
+
+
 function Copy-NsxEdge{
 
     <#
