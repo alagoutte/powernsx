@@ -35260,6 +35260,53 @@ function Get-NsxBackingDVSwitch{
 
 }
 
+########
+########
+# Tunnel (GRE)
+
+function Get-NsxTunnel {
+
+    <#
+    .SYNOPSIS
+    Retrieves the Tunnel configuration from a specified Edge.
+
+    .DESCRIPTION
+    An NSX Edge Service Gateway provides all NSX Edge services such as firewall,
+    NAT, DHCP, VPN, load balancing, and high availability.
+
+    The NSX Edge can create GRE tunnels between your NSX environment and another
+    site. Routing using BGP and static routes is supported.
+
+    This cmdlet retrieves the Tunnel configuration from a specified Edge.
+
+    .EXAMPLE
+
+    PS C:\> Get-NsxEdge Edge01 | Get-NsxTunnel
+
+    #>
+
+    [CmdLetBinding(DefaultParameterSetName="Name")]
+
+    param (
+        [Parameter (Mandatory=$true,ValueFromPipeline=$true,Position=1)]
+            [ValidateScript({ ValidateEdge $_ })]
+            [System.Xml.XmlElement]$Edge
+    )
+
+    begin {}
+
+    process {
+
+        #We append the Edge-id to the associated Tunnel XML to enable pipeline workflows and
+        #consistent readable output
+
+        $_Tunnel = $Edge.tunnels.CloneNode($True)
+        Add-XmlElement -xmlRoot $_Tunnel -xmlElementName "edgeId" -xmlElementText $Edge.Id
+        $_Tunnel
+
+    }
+}
+
 function Copy-NsxEdge{
 
     <#
